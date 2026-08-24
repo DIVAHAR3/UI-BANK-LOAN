@@ -20,8 +20,8 @@ export const contract = {
 export const amortization = {
   percent: 88,
   principal: 240000,
-  fees: 212.61,
-  emi: 7865.7,
+  fees: 60000,
+  emi: 70000,
   balance: 271920,
 };
 

@@ -13,6 +13,38 @@ const STROKE = 14;
 const RADIUS = (SIZE - STROKE) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
+const BALANCE_SEGMENTS = (() => {
+  const parts = [
+    {
+      label: "Principal",
+      value: amortization.principal,
+      from: "#3fd39a",
+      to: "#0b7a54",
+    },
+    {
+      label: "Fees",
+      value: amortization.fees,
+      from: "#fbbf24",
+      to: "#d97706",
+    },
+    {
+      label: "EMI",
+      value: amortization.emi,
+      from: "#fb7185",
+      to: "#be123c",
+    },
+  ];
+  const total = parts.reduce((sum, part) => sum + part.value, 0);
+  let cumulative = 0;
+  return parts.map((part) => {
+    const fraction = total > 0 ? part.value / total : 0;
+    const length = fraction * CIRCUMFERENCE;
+    const segment = { ...part, length, dashOffset: -cumulative };
+    cumulative += length;
+    return segment;
+  });
+})();
+
 const ROWS = [
   {
     icon: Wallet,
@@ -41,11 +73,11 @@ const ROWS = [
     label: "EMI",
     value: amortization.emi,
     decimals: 2,
-    from: "#60a5fa",
-    to: "#2563eb",
-    hoverBg: "bg-blue-50",
-    iconBg: "bg-blue-100",
-    iconText: "text-blue-600",
+    from: "#fb7185",
+    to: "#be123c",
+    hoverBg: "bg-rose-50",
+    iconBg: "bg-rose-100",
+    iconText: "text-rose-600",
   },
   {
     icon: Scale,
@@ -99,6 +131,12 @@ export function AmortizationOverview() {
                 <stop offset="0%" stopColor="var(--color-mint)" />
                 <stop offset="100%" stopColor="var(--color-mint-soft)" />
               </linearGradient>
+              {BALANCE_SEGMENTS.map((seg) => (
+                <linearGradient key={seg.label} id={`segGradient-${seg.label}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={seg.from} />
+                  <stop offset="100%" stopColor={seg.to} />
+                </linearGradient>
+              ))}
             </defs>
             <circle
               cx={SIZE / 2}
@@ -108,19 +146,39 @@ export function AmortizationOverview() {
               stroke="url(#trackGradient)"
               strokeWidth={STROKE}
             />
-            <motion.circle
-              cx={SIZE / 2}
-              cy={SIZE / 2}
-              r={RADIUS}
-              fill="none"
-              stroke="url(#ringGradient)"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-              strokeDasharray={CIRCUMFERENCE}
-              initial={{ strokeDashoffset: CIRCUMFERENCE }}
-              animate={{ strokeDashoffset: offset }}
-              transition={{ duration: ringDuration, delay: ringDelay, ease: [0.16, 1, 0.3, 1] }}
-            />
+            {active === "Balance" ? (
+              BALANCE_SEGMENTS.map((seg, i) => (
+                <motion.circle
+                  key={seg.label}
+                  cx={SIZE / 2}
+                  cy={SIZE / 2}
+                  r={RADIUS}
+                  fill="none"
+                  stroke={`url(#segGradient-${seg.label})`}
+                  strokeWidth={STROKE}
+                  strokeLinecap="butt"
+                  strokeDasharray={`${seg.length} ${CIRCUMFERENCE - seg.length}`}
+                  strokeDashoffset={seg.dashOffset}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                />
+              ))
+            ) : (
+              <motion.circle
+                cx={SIZE / 2}
+                cy={SIZE / 2}
+                r={RADIUS}
+                fill="none"
+                stroke="url(#ringGradient)"
+                strokeWidth={STROKE}
+                strokeLinecap="round"
+                strokeDasharray={CIRCUMFERENCE}
+                initial={{ strokeDashoffset: CIRCUMFERENCE }}
+                animate={{ strokeDashoffset: offset }}
+                transition={{ duration: ringDuration, delay: ringDelay, ease: [0.16, 1, 0.3, 1] }}
+              />
+            )}
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-4xl font-extrabold tracking-tight text-ink">
